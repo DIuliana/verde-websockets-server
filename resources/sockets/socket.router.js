@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const pot = require('./pot.controllers');
+const socket = require('./socket.controllers');
 
 const router = Router();
 const websocket = {};
@@ -9,8 +9,12 @@ router
         websocket[req.params.id] = websocket[req.params.id] ? { ...websocket[req.params.id], pot: req.ws } : { pot: req.ws };
 
         req.ws.send(`Hello, pot ${req.params.id}! You are connected`)
-        ws.on('message', (msg) => { websocket[req.params.id].mobile.send(msg) });
-        ws.on('close', () => { delete websocket[req.params.id].pot }); // move to db
+        ws.on('message', (msg) => {
+            socket.onMessage(websocket[req.params.id].mobile, msg)
+        });
+        ws.on('close', () => {
+            socket.onClose.pot(websocket, req.params.id);
+        }); // move to db
         console.log('pot socket route');
     });
 
@@ -19,8 +23,12 @@ router
         websocket[req.params.id] = websocket[req.params.id] ? { ...websocket[req.params.id], mobile: req.ws } : { mobile: req.ws };
 
         req.ws.send(`Hello, mobile ${req.params.id}! You are connected`)
-        ws.on('message', (msg) => { websocket[req.params.id].pot.send(msg) });
-        ws.on('close', () => { delete websocket[req.params.id].mobile }); // move to db
+        ws.on('message', (msg) => {
+            socket.onMessage(websocket[req.params.id].pot, msg)
+        });
+        ws.on('close', () => {
+            socket.onClose.mobile(websocket, req.params.id);
+        });; // move to db
         console.log('mobile socket route');
     });
 
